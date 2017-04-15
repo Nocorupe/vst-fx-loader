@@ -150,7 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\vst_fx_loader.cpp" />
+    <ClCompile Include="..\..\vst_fx_loader.cc" />
     <ClCompile Include="Source.cpp">
       <SubType>
       </SubType>

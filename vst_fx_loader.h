@@ -1,4 +1,17 @@
-﻿#pragma once
+﻿//
+// The MIT License (MIT)
+// Copyright (c) 2017 nocorupe.
+// 
+
+// 2017/04/15 version 0.5 
+
+//
+// Use this in *one* .cc
+//   #define VSTFXLOADER_IMPLEMENTATION
+//   #include "vst_fx_loader.h"
+//
+#ifndef VSTFXLOADER_H_
+#define VSTFXLOADER_H_
 
 #include <string>
 #include <memory>
@@ -16,13 +29,24 @@ struct VstTimeInfo;
 namespace vstfx {
 
 #ifdef _WIN32
-	typedef int IntPtr;
+	typedef short Int16;
 	typedef int Int32;
+	typedef __int64 Int64;
 #else
 #include <stdint.h>
-	typedef int64_t IntPtr;
+	typedef int16_t Int16;
 	typedef int32_t Int32;
+	typedef int64_t Int64;
 #endif
+
+#define VSTFX_64BIT_PLATFORM _WIN64 || __LP64__
+
+#if VSTFX_64BIT_PLATFORM
+	typedef Int64 IntPtr;
+#else
+	typedef Int32 IntPtr;
+#endif
+
 
 
 class ParamProperties {
@@ -79,8 +103,8 @@ public:
 	Logger();
 
 	void push(std::string aMessage);
-	const std::string& toString();
-	const std::stringstream& toStream();
+	std::string toString() const ;
+	std::stringstream& toStream();
 
 	void clear();
 
@@ -305,7 +329,7 @@ namespace vstfx {
 			return false;
 		}
 		Vst2xPluginEntryFunc entryFunc = (Vst2xPluginEntryFunc)entryPoint;
-		mAEffect = entryFunc([](AEffect *aEffect, VstInt32 aOpcode, VstInt32 aIndex, VstIntPtr aValue, void *aDataPtr, float aOpt) -> VstInt32 {
+		mAEffect = entryFunc([](AEffect *aEffect, VstInt32 aOpcode, VstInt32 aIndex, VstIntPtr aValue, void *aDataPtr, float aOpt) -> VstIntPtr {
 			// @JP: vstpluginmain.cpp main()ではaudioMasterVersionだけがコールされる
 			if (aOpcode == audioMasterVersion) {
 				return kVstVersion;
@@ -799,12 +823,12 @@ namespace vstfx {
 		mMutex.unlock();
 	}
 
-	const std::string& Logger::toString()
+	std::string Logger::toString() const
 	{
 		return mStream.str();
 	}
 
-	const std::stringstream& Logger::toStream()
+	std::stringstream& Logger::toStream()
 	{
 		ResetStream(mStream);
 		while (!mMessageQueue.empty()) {
@@ -829,5 +853,7 @@ namespace vstfx {
 
 #pragma warning(pop)
 #endif //_WIN32
+
+#endif
 
 #endif
