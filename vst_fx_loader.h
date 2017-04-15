@@ -103,7 +103,7 @@ public:
 	Logger();
 
 	void push(std::string aMessage);
-	std::string toString() const ;
+	std::string toString();
 	std::stringstream& toStream();
 
 	void clear();
@@ -225,6 +225,7 @@ namespace vstfx {
 		, mSampleRate(44100)
 		, mBlockSize(2048)
 	{
+		mTimeInfo->flags = 0;
 	}
 
 	inline Vst2x::~Vst2x()
@@ -237,6 +238,7 @@ namespace vstfx {
 		close();
 		mLibLoader = std::unique_ptr<LibLoader>(new LibLoader);
 		if (mLibLoader->load(aFileName) == false) {
+			mLogger.push("Vst2x::open() failed. loader error :");
 			mLogger.push(mLibLoader->getErrorMessage());
 			mLibLoader.release();
 			return false;
@@ -420,7 +422,7 @@ namespace vstfx {
 
 	inline void Vst2x::setProgram(int aIndex)
 	{
-		dispatcher(effSetProgram, aIndex, 0, 0, 0);
+		dispatcher(effSetProgram,0, aIndex, 0, 0);
 	}
 
 	inline int Vst2x::getProgram()
@@ -650,40 +652,6 @@ namespace vstfx {
 		return result;
 	}
 
-	/*
-		mEffectName = 
-		mVenderString = 
-
-
-		mParamNames.resize(mAEffect->numParams);
-		mParamLabels.resize(mAEffect->numParams);
-		for (int i = 0; i < mAEffect->numParams; ++i) {
-			mParamNames.at(i) = getStringData(mAEffect, effGetParamName, i);
-			mParamLabels.at(i) = getStringData(mAEffect, effGetParamLabel, i);
-		}
-
-		mParamProperties.resize(mAEffect->numParams);
-		for (int i = 0; i < mAEffect->numParams; ++i) {
-			VstParameterProperties pp;
-			if (dispatcher(effGetParameterProperties, i, 0, &pp, 0.0f)) {
-				mParamProperties.at(i).isSwitch = (bool)(pp.flags & kVstParameterIsSwitch);
-				if (pp.flags & kVstParameterUsesIntegerMinMax) {
-					mParamProperties.at(i).maxValue = pp.maxInteger;
-					mParamProperties.at(i).minValue = pp.minInteger;
-				}
-
-			}
-			mParamLabels.at(i) = getStringData(mAEffect, effGetParamLabel, i);
-		}
-
-		mProgramName.resize(mAEffect->numPrograms);
-		for (int i = 0; i < mAEffect->numPrograms; ++i) {
-			mProgramName.at(i) = getStringData(mAEffect, effGetProgramNameIndexed, i);
-		}
-
-		return true;
-	}
-	*/
 	namespace WinFunc {
 		HMODULE LoadLibraryHandle(std::string aPath) {
 			return LoadLibraryExA(
@@ -700,24 +668,22 @@ namespace vstfx {
 
 		std::string GetLastSystemError() {
 			DWORD message_id = GetLastError();
-
-			static const int buff_size = 2048;
-			char buff[buff_size];
+			LPVOID msgBuff;
 
 			FormatMessageA(
-				FORMAT_MESSAGE_FROM_SYSTEM,
+				FORMAT_MESSAGE_ALLOCATE_BUFFER
+				| FORMAT_MESSAGE_FROM_SYSTEM
+				| FORMAT_MESSAGE_IGNORE_INSERTS,
 				0,
 				message_id,
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-				buff,
-				(DWORD)(buff_size - 1),
+				(LPSTR)&msgBuff,
+				0,
 				NULL);
-			// Windows adds newlines for error messages which we must trim
-			std::string msg(buff);
-			auto pos = msg.find("\n", 0);
-			if (pos != std::string::npos) {
-				msg.replace(pos, 1, "\0");
-			}
+
+			std::string msg = std::string((LPSTR)msgBuff);
+			LocalFree(msgBuff);
+
 			return msg;
 		}
 	}
@@ -823,9 +789,9 @@ namespace vstfx {
 		mMutex.unlock();
 	}
 
-	std::string Logger::toString() const
+	std::string Logger::toString()
 	{
-		return mStream.str();
+		return toStream().str();
 	}
 
 	std::stringstream& Logger::toStream()
