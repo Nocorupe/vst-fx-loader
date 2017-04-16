@@ -28,10 +28,12 @@ int main(int argc, const char* argv[])
 		std::cout << "  " << i << ":" << vst2x.getProgramName(i) << std::endl;
 	}
 
-	// float audio_in[2][1024];
-	// float audio_out[2][1024];
-	// vst2x.resume();
-	// vst2x.processReplacing(audio_in, audio_out, 1024);
+	//float * in_heads[2] = { new float[2048],new float[2048] };
+	//float * out_heads[2] = { new float[2048],new float[2048] };
+	//
+	//vst2x.resume();
+	//vst2x.processReplacing(in_heads, out_heads, 2048);
+	//
 
 	vst2x.close();
 	return 0;
